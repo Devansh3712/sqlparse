@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass, field
+from pprint import pprint
 
 from schemas import *
 
@@ -228,4 +229,4 @@ if __name__ == "__main__":
         sql="SELECT fname AS first_name, lname AS last_name FROM data WHERE age > 20 AND location= 'Delhi'"
     )
     result = query.parse()
-    print(result)
+    pprint(result)
