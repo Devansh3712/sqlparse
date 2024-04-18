@@ -1,3 +1,4 @@
+import argparse
 import re
 from dataclasses import dataclass, field
 from pprint import pprint
@@ -31,6 +32,7 @@ class Parser:
     query: Query = field(default_factory=Query)
     index: int = 0
     step: Step = Step.INIT
+    next_update_field: str = field(default_factory=str)
 
     def __post_init__(self):
         self.length = len(self.sql)
@@ -51,6 +53,7 @@ class Parser:
                             self.query.qtype = Type.INSERT
                         case "UPDATE":
                             self.query.qtype = Type.UPDATE
+                            self.step = Step.UPDATE
                         case "DELETE FROM":
                             self.query.qtype = Type.DELETE
                             self.step = Step.DELETE_FROM
@@ -172,6 +175,58 @@ class Parser:
                     self.pop()
                     self.step = Step.WHERE_FIELD
 
+                case Step.UPDATE:
+                    table_name = self.peek()
+                    if not table_name:
+                        raise ParserError("at UPDATE: expected a table name")
+                    self.query.table = table_name
+                    self.pop()
+                    self.step = Step.UPDATE_SET
+
+                case Step.UPDATE_SET:
+                    if (peeked := self.peek().upper()) != "SET":
+                        raise ParserError(f"at UPDATE: expected SET, found '{peeked}'")
+                    self.pop()
+                    self.step = Step.UPDATE_FIELD
+
+                case Step.UPDATE_FIELD:
+                    identifier = self.peek()
+                    if not self.is_identifier(identifier):
+                        raise ParserError(
+                            f"at UPDATE: expected a field, found '{identifier}'"
+                        )
+                    self.next_update_field = identifier
+                    self.pop()
+                    self.step = Step.UPDATE_EQUALS
+
+                case Step.UPDATE_EQUALS:
+                    if (peeked := self.peek()) != "=":
+                        raise ParserError(f"at UPDATE: expected '=', found '{peeked}'")
+                    self.pop()
+                    self.step = Step.UPDATE_VALUE
+
+                case Step.UPDATE_VALUE:
+                    value = self.peek()
+                    if not value:
+                        raise ParserError(
+                            f"at UPDATE: expected a value, found '{value}'"
+                        )
+                    self.query.updates[self.next_update_field] = value
+                    self.next_update_field = str()
+                    self.pop()
+                    if (peeked := self.peek().upper()) == "WHERE":
+                        self.step = Step.WHERE
+                        continue
+                    self.step = Step.UPDATE_COMMA
+
+                case Step.UPDATE_COMMA:
+                    if (peeked := self.peek()) != ",":
+                        raise ParserError(
+                            f"at UPDATE: expected comma, found '{peeked}'"
+                        )
+                    self.pop()
+                    self.step = Step.UPDATE_FIELD
+
     def peek(self) -> str:
         peeked, _ = self._peek()
         return peeked
@@ -225,8 +280,10 @@ class Parser:
 
 
 if __name__ == "__main__":
-    query = Parser(
-        sql="SELECT fname AS first_name, lname AS last_name FROM data WHERE age > 20 AND location= 'Delhi'"
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("query", type=str, help="SQL query to parse")
+    args = parser.parse_args()
+
+    query = Parser(sql=args.query)
     result = query.parse()
     pprint(result)

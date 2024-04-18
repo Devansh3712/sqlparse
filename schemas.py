@@ -22,6 +22,12 @@ class Step(int, Enum):
     WHERE_OPERATOR = 8
     WHERE_VALUE = 9
     WHERE_CONDITION = 10
+    UPDATE = 11
+    UPDATE_SET = 12
+    UPDATE_FIELD = 13
+    UPDATE_EQUALS = 14
+    UPDATE_VALUE = 15
+    UPDATE_COMMA = 16
 
 
 class Operator(str, Enum):
@@ -40,17 +46,18 @@ class ParserError(Exception):
 
 @dataclass
 class Condition:
-    operand_1: str = str()
+    operand_1: str = field(default_factory=str)
     operand_1_is_field: bool = True
     operator: Operator = Operator.UNKNOWN
-    operand_2: str = str()
+    operand_2: str = field(default_factory=str)
     operand_2_is_field: bool = True
 
 
 @dataclass
 class Query:
     qtype: Type = Type.UNKNOWN
-    table: str = str()
+    table: str = field(default_factory=str)
     fields: list[str] = field(default_factory=list)
     conditions: list[Condition] = field(default_factory=list)
+    updates: dict[str, str] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)
