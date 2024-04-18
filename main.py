@@ -165,7 +165,9 @@ class Parser:
 
                 case Step.WHERE_CONDITION:
                     if (peeked := self.peek().upper()) not in ["AND", "OR"]:
-                        raise ParserError(f"at WHERE: expected AND/OR, found '{peeked}'")
+                        raise ParserError(
+                            f"at WHERE: expected AND/OR, found '{peeked}'"
+                        )
                     self.pop()
                     self.step = Step.WHERE_FIELD
 
@@ -223,7 +225,7 @@ class Parser:
 
 if __name__ == "__main__":
     query = Parser(
-        sql="SELECT * FROM data WHERE city = 'bulandshahr' AND name = 'tanushree' OR age > 20"
+        sql="SELECT fname AS first_name, lname AS last_name FROM data WHERE age > 20 AND location= 'Delhi'"
     )
     result = query.parse()
     print(result)
