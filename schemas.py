@@ -1,0 +1,56 @@
+from dataclasses import dataclass, field
+from enum import Enum
+
+
+class Type(str, Enum):
+    SELECT = "SELECT"
+    INSERT = "INSERT INTO"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE FROM"
+    UNKNOWN = "UNKNOWN"
+
+
+class Step(int, Enum):
+    INIT = 0
+    SELECT_FIELD = 1
+    SELECT_COMMA = 2
+    SELECT_FROM = 3
+    SELECT_FROM_TABLE = 4
+    DELETE_FROM = 5
+    WHERE = 6
+    WHERE_FIELD = 7
+    WHERE_OPERATOR = 8
+    WHERE_VALUE = 9
+    WHERE_CONDITION = 10
+
+
+class Operator(str, Enum):
+    EQ = "="
+    LT = "<"
+    GT = ">"
+    LTE = "<="
+    GTE = ">="
+    NEQ = "!="
+    UNKNOWN = "UNKNOWN"
+
+
+class ParserError(Exception):
+    pass
+
+
+@dataclass
+class Condition:
+    operand_1: str = str()
+    operand_1_is_field: bool = True
+    operator: Operator = Operator.UNKNOWN
+    operand_2: str = str()
+    operand_2_is_field: bool = True
+
+
+@dataclass
+class Query:
+    qtype: Type = Type.UNKNOWN
+    table: str = str()
+    fields: list[str] = field(default_factory=list)
+    conditions: list[Condition] = field(default_factory=list)
+    aliases: dict[str, str] = field(default_factory=dict)
